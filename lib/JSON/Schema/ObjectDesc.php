@@ -22,23 +22,25 @@ class ObjectDesc extends AggregateDesc {
   }
   
   
-  public function validate($data) {
+  public function validate($node, $data) {
     if (!$this->validateType($data)) {
-      throw new ValidationException("Expected an object.");
+      $this->addValidationError(new ValidationError($node, "Expected an object."));
+      return;
     }
     
     foreach ($this->excludes as $key_name) {
       if (array_key_exists($key_name, $data)) {
-        throw new ValidationException(sprintf("Expected '%s' to not be present.", $key_name));
+        $this->addValidationError(new ValidationError($node, sprintf("Expected '%s' to not be present.", $key_name)));
       }
     }
     
     foreach ($this->includes as $key_name => $desc) {
       if (!array_key_exists($key_name, $data)) {
-        throw new ValidationException(sprintf("Expected '%s' to be present.", $key_name));
+        $this->addValidationError(new ValidationError($node, sprintf("Expected '%s' to be present.", $key_name)));
+        continue;
       }
       
-      $this->validateValueForKey($desc, $data, $key_name);
+      $this->validateValueForKey($desc, sprintf("%s.%s", $node, $key_name), $data, $key_name);
     }
     
     foreach ($this->optional as $key_name => $desc) {
@@ -46,22 +48,50 @@ class ObjectDesc extends AggregateDesc {
         continue;
       }
       
-      $this->validateValueForKey($desc, $data, $key_name);
+      $this->validateValueForKey($desc, sprintf("%s.%s", $node, $key_name), $data, $key_name);
     }
   }
   
   
-  private function validateValueForKey(Desc $desc, $data, $key_name) {
+  private function validateValueForKey(Desc $desc, $node, $data, $key_name) {
     if (is_object($data)) {
-      $desc->validate($data->$key_name);
+      $desc->validate($node, $data->$key_name);
     }
     else {
-      $desc->validate($data[$key_name]);
+      $desc->validate($node, $data[$key_name]);
     }
   }
   
   
   private function validateType($data) {
     return (is_object($data) || is_array($data));
+  }
+  
+  
+  public function getValidationErrors() {
+    $validation_errors = parent::getValidationErrors();
+    
+    foreach ($this->includes as $desc) {
+      $validation_errors = array_merge($validation_errors, $desc->getValidationErrors());
+    }
+    
+    foreach ($this->optional as $desc) {
+      $validation_errors = array_merge($validation_errors, $desc->getValidationErrors());
+    }
+    
+    return $validation_errors;
+  }
+  
+  
+  public function clearValidationErrors() {
+    parent::clearValidationErrors();
+    
+    foreach ($this->includes as $desc) {
+      $desc->clearValidationErrors();
+    }
+    
+    foreach ($this->optional as $desc) {
+      $desc->clearValidationErrors();
+    }
   }
 }

@@ -56,11 +56,8 @@ $schema = new Schema(Schema::TYPE_OBJECT, function($obj) {
     });
 });
 
-try {
-    $schema->validate($json);
-}
-catch (\JSON\Schema\ValidationException $e) {
-    // Handle the exception.
+if (!$schema->validate($json)) {
+    var_dump($schema->getValidationErrors());
 }
 
 
@@ -70,6 +67,8 @@ $schema = new Schema(Schema::TYPE_OBJECT, function($obj) {
     // When specifying a custom validation when using this syntax, it is called always
     // whenever the actual type matches one of the expected types, except when the actual
     // type is NULL.
+    // 
+    // This currently only works for "flat" types: string, number, boolean and NULL.
     $obj->includes('name', Schema::TYPE_STRING | Schema::TYPE_NULL, function($str) {
         // Only called when $root['name'] is a string.
     });
@@ -86,3 +85,4 @@ $schema = new Schema(Schema::TYPE_OBJECT, function($obj) {
     *   Specify the expected amount of items in the array (either exact or through a minimum and/or maximum).
     *   Specify the expected type/value at a certain index.
 *   Better error messages.
+*   Extend multiple type support to aggregate types as well.

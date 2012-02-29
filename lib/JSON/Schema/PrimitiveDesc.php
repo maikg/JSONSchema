@@ -22,15 +22,16 @@ class PrimitiveDesc extends Desc {
   }
   
   
-  public function validate($data) {
+  public function validate($node, $data) {
     if (!$this->validateType($data)) {
-      throw new ValidationException("Got unexpected type.");
+      $this->addValidationError(new ValidationError($node, "Got unexpected type."));
+      return;
     }
     
     if ($this->describe !== NULL && $this->getType($data) != Schema::TYPE_NULL) {
       $describe = $this->describe;
       if (!$describe($data)) {
-        throw new ValidationException("Value doesn't match description.");
+        $this->addValidationError(new ValidationError($node, "Value doesn't match description."));
       }
     }
   }

@@ -5,16 +5,28 @@ use JSON\Schema;
 use JSON\Schema\ValidationException;
 
 class SchemaTest extends \PHPUnit_Framework_TestCase {
+  private function assertValid(Schema $schema, $data) {
+    $this->assertTrue($schema->validate($data));
+    $this->assertCount(0, $schema->getValidationErrors());
+  }
+  
+  
+  private function assertNotValid(Schema $schema, $data, $validation_error_count) {
+    $this->assertFalse($schema->validate($data));
+    $this->assertCount($validation_error_count, $schema->getValidationErrors());
+  }
+  
+  
   public function testEmptyArray() {
     $schema = new Schema(Schema::TYPE_ARRAY);
-    $schema->validate(array());
+    $this->assertValid($schema, array());
   }
   
   
   public function testEmptyObject() {
     $schema = new Schema(Schema::TYPE_OBJECT);
-    $schema->validate(array());
-    $schema->validate(new \stdClass);
+    $this->assertValid($schema, array());
+    $this->assertValid($schema, new \stdClass);
   }
   
   
@@ -43,28 +55,16 @@ class SchemaTest extends \PHPUnit_Framework_TestCase {
     });
     
     $data = array('string', 'value', '');
-    $schema->validate($data);
+    $this->assertValid($schema, $data);
     
-    try {
-      $data = array('string', 14);
-      $schema->validate($data);
-      $this->fail("Expected ValidationException to be thrown.");
-    }
-    catch (ValidationException $e) {}
+    $data = array('string', 14);
+    $this->assertNotValid($schema, $data, 1);
     
-    try {
-      $data = array('string', NULL);
-      $schema->validate($data);
-      $this->fail("Expected ValidationException to be thrown.");
-    }
-    catch (ValidationException $e) {}
+    $data = array('string', NULL);
+    $this->assertNotValid($schema, $data, 1);
     
-    try {
-      $data = array('string', false);
-      $schema->validate($data);
-      $this->fail("Expected ValidationException to be thrown.");
-    }
-    catch (ValidationException $e) {}
+    $data = array('string', false);
+    $this->assertNotValid($schema, $data, 1);
   }
   
   
@@ -76,14 +76,10 @@ class SchemaTest extends \PHPUnit_Framework_TestCase {
     });
     
     $data = array('asdf', 'jkl;');
-    $schema->validate($data);
+    $this->assertValid($schema, $data);
     
-    try {
-      $data = array('asdf', 'jkl');
-      $schema->validate($data);
-      $this->fail("Expected ValidationException to be thrown.");
-    }
-    catch (ValidationException $e) {}
+    $data = array('asdf', 'jkl');
+    $this->assertNotValid($schema, $data, 1);
   }
   
   
@@ -93,14 +89,10 @@ class SchemaTest extends \PHPUnit_Framework_TestCase {
     });
     
     $data = array(15, 15.4);
-    $schema->validate($data);
+    $this->assertValid($schema, $data);
     
-    try {
-      $data = array(15.4, '15');
-      $schema->validate($data);
-      $this->fail("Expected ValidationException to be thrown.");
-    }
-    catch (ValidationException $e) {}
+    $data = array(15.4, '15');
+    $this->assertNotValid($schema, $data, 1);
   }
   
   
@@ -112,14 +104,10 @@ class SchemaTest extends \PHPUnit_Framework_TestCase {
     });
     
     $data = array(10.1, 11);
-    $schema->validate($data);
+    $this->assertValid($schema, $data);
     
-    try {
-      $data = array(10.1, 10);
-      $schema->validate($data);
-      $this->fail("Expected ValidationException to be thrown.");
-    }
-    catch (ValidationException $e) {}
+    $data = array(10.1, 10);
+    $this->assertNotValid($schema, $data, 1);
   }
   
   
@@ -129,21 +117,13 @@ class SchemaTest extends \PHPUnit_Framework_TestCase {
     });
     
     $data = array(true, false);
-    $schema->validate($data);
+    $this->assertValid($schema, $data);
     
-    try {
-      $data = array(true, 1);
-      $schema->validate($data);
-      $this->fail("Expected ValidationException to be thrown.");
-    }
-    catch (ValidationException $e) {}
+    $data = array(true, 1);
+    $this->assertNotValid($schema, $data, 1);
     
-    try {
-      $data = array(true, 'true');
-      $schema->validate($data);
-      $this->fail("Expected ValidationException to be thrown.");
-    }
-    catch (ValidationException $e) {}
+    $data = array(true, 'true');
+    $this->assertNotValid($schema, $data, 1);
   }
   
   
@@ -153,21 +133,13 @@ class SchemaTest extends \PHPUnit_Framework_TestCase {
     });
     
     $data = array(NULL);
-    $schema->validate($data);
+    $this->assertValid($schema, $data);
     
-    try {
-      $data = array(NULL, false);
-      $schema->validate($data);
-      $this->fail("Expected ValidationException to be thrown.");
-    }
-    catch (ValidationException $e) {}
+    $data = array(NULL, false);
+    $this->assertNotValid($schema, $data, 1);
     
-    try {
-      $data = array(NULL, 'NULL');
-      $schema->validate($data);
-      $this->fail("Expected ValidationException to be thrown.");
-    }
-    catch (ValidationException $e) {}
+    $data = array(NULL, 'NULL');
+    $this->assertNotValid($schema, $data, 1);
   }
   
   
@@ -185,34 +157,26 @@ class SchemaTest extends \PHPUnit_Framework_TestCase {
       'first_name' => 'Maik',
       'last_name' => 'Gosenshuis'
     );
-    $schema->validate($data);
+    $this->assertValid($schema, $data);
     
     $data = array(
       'first_name' => 'Maik',
       'last_name' => 'Gosenshuis',
       'date_of_birth' => '1986-09-02'
     );
-    $schema->validate($data);
+    $this->assertValid($schema, $data);
     
-    try {
-      $data = array(
-        'first_name' => 'Maik',
-        'last_name' => 'Gosenshuis',
-        'name' => 'Maik Gosenshuis'
-      );
-      $schema->validate($data);
-      $this->fail("Expected ValidationException to be thrown.");
-    }
-    catch (ValidationException $e) {}
+    $data = array(
+      'first_name' => 'Maik',
+      'last_name' => 'Gosenshuis',
+      'name' => 'Maik Gosenshuis'
+    );
+    $this->assertNotValid($schema, $data, 1);
     
-    try {
-      $data = array(
-        'first_name' => 'Maik'
-      );
-      $schema->validate($data);
-      $this->fail("Expected ValidationException to be thrown.");
-    }
-    catch (ValidationException $e) {}
+    $data = array(
+      'first_name' => 'Maik'
+    );
+    $this->assertNotValid($schema, $data, 1);
   }
   
   
@@ -234,41 +198,29 @@ class SchemaTest extends \PHPUnit_Framework_TestCase {
       ),
       'nicknames' => array()
     );
-    $schema->validate($data);
+    $this->assertValid($schema, $data);
     
-    try {
-      $data = array(
-        'name' => 'Maik Gosenshuis',
-        'nicknames' => array()
-      );
-      $schema->validate($data);
-      $this->fail("Expected ValidationException to be thrown.");
-    }
-    catch (ValidationException $e) {}
+    $data = array(
+      'name' => 'Maik Gosenshuis',
+      'nicknames' => array()
+    );
+    $this->assertNotValid($schema, $data, 1);
     
-    try {
-      $data = array(
+    $data = array(
+      'first' => 'Maik',
+      'last' => 'Gosenshuis',
+      'nicknames' => array()
+    );
+    $this->assertNotValid($schema, $data, 1);
+    
+    $data = array(
+      'name' => array(
         'first' => 'Maik',
-        'last' => 'Gosenshuis',
-        'nicknames' => array()
-      );
-      $schema->validate($data);
-      $this->fail("Expected ValidationException to be thrown.");
-    }
-    catch (ValidationException $e) {}
-    
-    try {
-      $data = array(
-        'name' => array(
-          'first' => 'Maik',
-          'last' => 'Gosenshuis'
-        ),
-        'nicknames' => ''
-      );
-      $schema->validate($data);
-      $this->fail("Expected ValidationException to be thrown.");
-    }
-    catch (ValidationException $e) {}
+        'last' => 'Gosenshuis'
+      ),
+      'nicknames' => ''
+    );
+    $this->assertNotValid($schema, $data, 1);
   }
   
   
@@ -280,24 +232,25 @@ class SchemaTest extends \PHPUnit_Framework_TestCase {
     $data = array(
       'name' => 'Maik Gosenshuis'
     );
-    $schema->validate($data);
+    $this->assertValid($schema, $data);
     
     $data = array(
       'name' => 15
     );
-    $schema->validate($data);
+    $this->assertValid($schema, $data);
     
     $data = array(
       'name' => NULL
     );
-    $schema->validate($data);
+    $this->assertValid($schema, $data);
     
-    try {
-      $data = array();
-      $schema->validate($data);
-      $this->fail("Expected ValidationException to be thrown.");
-    }
-    catch (ValidationException $e) {}
+    $data = array(
+      'name' => true
+    );
+    $this->assertNotValid($schema, $data, 1);
+    
+    $data = array();
+    $this->assertNotValid($schema, $data, 1);
   }
   
   
@@ -311,21 +264,17 @@ class SchemaTest extends \PHPUnit_Framework_TestCase {
     $data = array(
       'name' => 'Maik'
     );
-    $schema->validate($data);
+    $this->assertValid($schema, $data);
     
     $data = array(
       'name' => NULL
     );
-    $schema->validate($data);
+    $this->assertValid($schema, $data);
     
-    try {
-      $data = array(
-        'name' => ''
-      );
-      $schema->validate($data);
-      $this->fail("Expected ValidationException to be thrown.");
-    }
-    catch (ValidationException $e) {}
+    $data = array(
+      'name' => ''
+    );
+    $this->assertNotValid($schema, $data, 1);
   }
   
   
@@ -345,7 +294,7 @@ class SchemaTest extends \PHPUnit_Framework_TestCase {
     $schema = new Schema(Schema::TYPE_OBJECT);
     
     $json_string = "{}";
-    $schema->validate($json_string);
+    $this->assertValid($schema, $json_string);
   }
   
   
@@ -357,7 +306,7 @@ class SchemaTest extends \PHPUnit_Framework_TestCase {
     $json = new \stdClass;
     $json->name = 'Maik';
     
-    $schema->validate($json);
+    $this->assertValid($schema, $json);
     
     $schema = new Schema(Schema::TYPE_ARRAY, function($arr) {
       $arr->all(Schema::TYPE_OBJECT, function($obj) {
@@ -373,6 +322,6 @@ class SchemaTest extends \PHPUnit_Framework_TestCase {
     
     $json = array($user1, $user2);
     
-    $schema->validate($json);
+    $this->assertValid($schema, $json);
   }
 }

@@ -35,6 +35,15 @@ class Schema {
       $data = json_decode($data, true);
     }
     
-    $this->root_desc->validate($data);
+    $this->root_desc->clearValidationErrors();
+    
+    $this->root_desc->validate('root', $data);
+    
+    return (count($this->getValidationErrors()) == 0);
+  }
+  
+  
+  public function getValidationErrors() {
+    return $this->root_desc->getValidationErrors();
   }
 }
