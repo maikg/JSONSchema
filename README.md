@@ -78,3 +78,6 @@ $schema->describe(Schema::TYPE_OBJECT, function($schema) {
 *   Make certain logical operations possible, such as "either include `first_name` and `last_name` **OR** include
     `full_name`".
 *   Allow regular expressions for the string type to be specified directly, without wrapping them up in a function.
+*   Add more validation methods for the array type:
+    *   Specify the expected amount of items in the array (either exact or through a minimum and/or maximum).
+    *   Specify the expected type/value at a certain index.
