@@ -62,8 +62,7 @@ class PrimitiveDesc extends Desc {
     else if (is_null($data)) {
       return Schema::TYPE_NULL;
     }
-    else {
-      throw new ValidationException("Got unsupported type.");
-    }
+    
+    return 0;
   }
 }

@@ -38,20 +38,19 @@ use JSON\Schema;
 
 $json = ...; // JSON string, array or object instance.
 
-$schema = new Schema();
 // Note that you specify the type of the root object, which should be an object
 // or an array.
-$schema->describe(Schema::TYPE_OBJECT, function($schema) {
-    $schema->includes('name', Schema::TYPE_OBJECT, function($schema) {
-        $schema->includes('first', Schema::TYPE_STRING);
-        $schema->includes('last', Schema::TYPE_STRING);
+$schema = new Schema(Schema::TYPE_OBJECT, function($obj) {
+    $obj->includes('name', Schema::TYPE_OBJECT, function($obj) {
+        $obj->includes('first', Schema::TYPE_STRING);
+        $obj->includes('last', Schema::TYPE_STRING);
     });.
-    $schema->excludes('full_name');
-    $schema->optional('date_of_birth', Schema::TYPE_STRING, function($dob) {
+    $obj->excludes('full_name');
+    $obj->optional('date_of_birth', Schema::TYPE_STRING, function($dob) {
         return preg_match('/^\d{4}-\d{2}-\d{2}$/', $dob);
     });
-    $schema->includes('nicknames', Schema::TYPE_ARRAY, function($schema) {
-        $schema->all(Schema::TYPE_STRING, function($nickname) {
+    $obj->includes('nicknames', Schema::TYPE_ARRAY, function($arr) {
+        $arr->all(Schema::TYPE_STRING, function($nickname) {
             return (strlen($nickname) > 0);
         });
     });
@@ -60,15 +59,20 @@ $schema->describe(Schema::TYPE_OBJECT, function($schema) {
 try {
     $schema->validate($json);
 }
-catch (ValidationException $e) {
+catch (\JSON\Schema\ValidationException $e) {
     // Handle the exception.
 }
 
 
 // It's also possible to specify multiple types for a single key.
-$schema->describe(Schema::TYPE_OBJECT, function($schema) {
+$schema = new Schema(Schema::TYPE_OBJECT, function($obj) {
     // This requires the 'name' key to be present, but it can be either NULL or a string.
-    $schema->includes('name', Schema::TYPE_STRING | Schema::TYPE_NULL);
+    // When specifying a custom validation when using this syntax, it is called always
+    // whenever the actual type matches one of the expected types, except when the actual
+    // type is NULL.
+    $obj->includes('name', Schema::TYPE_STRING | Schema::TYPE_NULL, function($str) {
+        // Only called when $root['name'] is a string.
+    });
 });
 ?>
 ```
@@ -81,3 +85,4 @@ $schema->describe(Schema::TYPE_OBJECT, function($schema) {
 *   Add more validation methods for the array type:
     *   Specify the expected amount of items in the array (either exact or through a minimum and/or maximum).
     *   Specify the expected type/value at a certain index.
+*   Better error messages.

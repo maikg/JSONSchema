@@ -13,7 +13,7 @@ class Schema {
   private $root_desc;
   
   
-  public function describe($type, \Closure $describe = NULL) {
+  public function __construct($type, \Closure $describe = NULL) {
     if ($type == self::TYPE_ARRAY) {
       $this->root_desc = new Schema\ArrayDesc();
     }
@@ -21,7 +21,7 @@ class Schema {
       $this->root_desc = new Schema\ObjectDesc();
     }
     else {
-      throw new \InvalidArgumentException("Root object should be an array or an object.");
+      throw new Schema\DescriptionException("Root object should be an array or an object.");
     }
     
     if ($describe !== NULL) {
@@ -31,10 +31,6 @@ class Schema {
   
   
   public function validate($data) {
-    if ($this->root_desc === NULL) {
-      throw new Schema\DescriptionException("No description defined for the root object.");
-    }
-    
     if (is_string($data)) {
       $data = json_decode($data, true);
     }
