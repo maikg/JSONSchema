@@ -2,29 +2,26 @@
 namespace JSON;
 
 class Schema {
-  const TYPE_ARRAY = 'array';
-  const TYPE_OBJECT = 'object';
-  const TYPE_STRING = 'string';
-  const TYPE_NUMBER = 'number';
-  const TYPE_BOOLEAN = 'boolean';
-  const TYPE_NULL = 'null';
+  const TYPE_ARRAY = 1;
+  const TYPE_OBJECT = 2;
+  const TYPE_STRING = 4;
+  const TYPE_NUMBER = 8;
+  const TYPE_BOOLEAN = 16;
+  const TYPE_NULL = 32;
   
   
   private $root_desc;
   
   
   public function describe($type, \Closure $describe = NULL) {
-    switch ($type) {
-      case self::TYPE_ARRAY:
-        $this->root_desc = new Schema\ArrayDesc();
-        break;
-        
-      case self::TYPE_OBJECT:
-        $this->root_desc = new Schema\ObjectDesc();
-        break;
-      
-      default:
-        throw new \InvalidArgumentException("Root object should be an array or an object.");
+    if ($type == self::TYPE_ARRAY) {
+      $this->root_desc = new Schema\ArrayDesc();
+    }
+    else if ($type == self::TYPE_OBJECT) {
+      $this->root_desc = new Schema\ObjectDesc();
+    }
+    else {
+      throw new \InvalidArgumentException("Root object should be an array or an object.");
     }
     
     if ($describe !== NULL) {

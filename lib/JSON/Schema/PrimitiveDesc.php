@@ -14,16 +14,20 @@ class PrimitiveDesc extends Desc {
   
   
   public function setValueDescription(\Closure $describe) {
+    if ($this->type == Schema::TYPE_NULL) {
+      throw new DescriptionException("Got custom description for NULL type.");
+    }
+    
     $this->describe = $describe;
   }
   
   
   public function validate($data) {
     if (!$this->validateType($data)) {
-      throw new ValidationException(sprintf("Expected %s.", $this->type));
+      throw new ValidationException("Got unexpected type.");
     }
     
-    if ($this->describe !== NULL) {
+    if ($this->describe !== NULL && $this->getType($data) != Schema::TYPE_NULL) {
       $describe = $this->describe;
       if (!$describe($data)) {
         throw new ValidationException("Value doesn't match description.");
@@ -33,17 +37,33 @@ class PrimitiveDesc extends Desc {
   
   
   private function validateType($data) {
-    switch ($this->type) {
-      case Schema::TYPE_STRING:
-        return is_string($data);
-      case Schema::TYPE_NUMBER:
-        return (is_int($data) || is_float($data));
-      case Schema::TYPE_BOOLEAN:
-        return is_bool($data);
-      case Schema::TYPE_NULL:
-        return is_null($data);
-      default:
-        throw new \RuntimeException(sprintf("Got unknown type: %s", $this->type));
+    $result = false;
+    $actual_type = $this->getType($data);
+    
+    return (
+      ($actual_type == Schema::TYPE_STRING    && ($this->type & Schema::TYPE_STRING))   ||
+      ($actual_type == Schema::TYPE_NUMBER    && ($this->type & Schema::TYPE_NUMBER))   ||
+      ($actual_type == Schema::TYPE_BOOLEAN   && ($this->type & Schema::TYPE_BOOLEAN))  ||
+      ($actual_type == Schema::TYPE_NULL      && ($this->type & Schema::TYPE_NULL))
+    );
+  }
+  
+  
+  private function getType($data) {
+    if (is_string($data)) {
+      return Schema::TYPE_STRING;
+    }
+    else if (is_int($data) || is_float($data)) {
+      return Schema::TYPE_NUMBER;
+    }
+    else if (is_bool($data)) {
+      return Schema::TYPE_BOOLEAN;
+    }
+    else if (is_null($data)) {
+      return Schema::TYPE_NULL;
+    }
+    else {
+      throw new ValidationException("Got unsupported type.");
     }
   }
 }

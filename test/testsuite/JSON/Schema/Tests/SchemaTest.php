@@ -26,6 +26,11 @@ class SchemaTest extends \PHPUnit_Framework_TestCase {
   }
   
   
+  public function testInvalidRootObjectType() {
+    $this->markTestIncomplete();
+  }
+  
+  
   public function testStrings() {
     $this->json->describe(Schema::TYPE_ARRAY, function($json) {
       $json->all(Schema::TYPE_STRING);
@@ -36,6 +41,20 @@ class SchemaTest extends \PHPUnit_Framework_TestCase {
     
     try {
       $data = array('string', 14);
+      $this->json->validate($data);
+      $this->fail("Expected ValidationException to be thrown.");
+    }
+    catch (ValidationException $e) {}
+    
+    try {
+      $data = array('string', NULL);
+      $this->json->validate($data);
+      $this->fail("Expected ValidationException to be thrown.");
+    }
+    catch (ValidationException $e) {}
+    
+    try {
+      $data = array('string', false);
       $this->json->validate($data);
       $this->fail("Expected ValidationException to be thrown.");
     }
@@ -244,5 +263,69 @@ class SchemaTest extends \PHPUnit_Framework_TestCase {
       $this->fail("Expected ValidationException to be thrown.");
     }
     catch (ValidationException $e) {}
+  }
+  
+  
+  public function testMultipleTypes() {
+    $this->json->describe(Schema::TYPE_OBJECT, function($json) {
+      $json->includes('name', Schema::TYPE_STRING | Schema::TYPE_NULL);
+    });
+    
+    $data = array(
+      'name' => 'Maik Gosenshuis'
+    );
+    $this->json->validate($data);
+    
+    $data = array(
+      'name' => NULL
+    );
+    $this->json->validate($data);
+    
+    try {
+      $data = array();
+      $this->json->validate($data);
+      $this->fail("Expected ValidationException to be thrown.");
+    }
+    catch (ValidationException $e) {}
+  }
+  
+  
+  public function testMultipleTypesWithCustomValidation() {
+    $this->json->describe(Schema::TYPE_OBJECT, function($json) {
+      $json->includes('name', Schema::TYPE_STRING | Schema::TYPE_NULL, function($data) {
+        return (strlen($data) > 0);
+      });
+    });
+    
+    $data = array(
+      'name' => 'Maik'
+    );
+    $this->json->validate($data);
+    
+    $data = array(
+      'name' => NULL
+    );
+    $this->json->validate($data);
+    
+    try {
+      $data = array(
+        'name' => ''
+      );
+      $this->json->validate($data);
+      $this->fail("Expected ValidationException to be thrown.");
+    }
+    catch (ValidationException $e) {}
+  }
+  
+  
+  /**
+   * @expectedException \JSON\Schema\DescriptionException
+   */
+  public function testNullTypeWithCustomValidation() {
+    $this->json->describe(Schema::TYPE_OBJECT, function($json) {
+      $json->includes('name', Schema::TYPE_NULL, function($data) {
+        return true;
+      });
+    });
   }
 }

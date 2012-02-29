@@ -13,12 +13,12 @@ class ObjectDesc extends AggregateDesc {
   
   
   public function includes($key_name, $child_type, \Closure $describe = NULL) {
-    $this->includes[$key_name] = $this->setupChildDesc($child_type);
+    $this->includes[$key_name] = $this->setupChildDesc($child_type, $describe);
   }
   
   
   public function optional($key_name, $child_type, \Closure $describe = NULL) {
-    $this->optional[$key_name] = $this->setupChildDesc($child_type);
+    $this->optional[$key_name] = $this->setupChildDesc($child_type, $describe);
   }
   
   

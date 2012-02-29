@@ -21,17 +21,13 @@ abstract class AggregateDesc extends Desc {
   
   
   protected function getDescForType($type) {
-    switch ($type) {
-      case Schema::TYPE_ARRAY:
-        return new ArrayDesc();
-        break;
-      
-      case Schema::TYPE_OBJECT:
-        return new ObjectDesc();
-        break;
-      
-      default:
-        return new PrimitiveDesc($type);
+    if ($type == Schema::TYPE_ARRAY) {
+      return new ArrayDesc();
     }
+    else if ($type == Schema::TYPE_OBJECT) {
+      return new ObjectDesc();
+    }
+    
+    return new PrimitiveDesc($type);
   }
 }
