@@ -51,7 +51,9 @@ $schema->describe(Schema::TYPE_OBJECT, function($schema) {
         return preg_match('/^\d{4}-\d{2}-\d{2}$/', $dob);
     });
     $schema->includes('nicknames', Schema::TYPE_ARRAY, function($schema) {
-        $schema->all(Schema::TYPE_STRING);
+        $schema->all(Schema::TYPE_STRING, function($nickname) {
+            return (strlen($nickname) > 0);
+        });
     });
 });
 
@@ -75,6 +77,4 @@ $schema->describe(Schema::TYPE_OBJECT, function($schema) {
 
 *   Make certain logical operations possible, such as "either include `first_name` and `last_name` **OR** include
     `full_name`".
-*   Less typing for type constants. Maybe wrap them in `JSON\Schema\Types` and remove the `TYPE_` prefix?). That would
-    allow you to do `use JSON\Schema\Types` and then use the types as `Types::STRING`.
 *   Allow regular expressions for the string type to be specified directly, without wrapping them up in a function.
