@@ -1,0 +1,248 @@
+<?PHP
+namespace JSON\Schema\Tests;
+
+use JSON\Schema;
+use JSON\Schema\ValidationException;
+
+class SchemaTest extends \PHPUnit_Framework_TestCase {
+  private $json;
+  
+  
+  public function setUp() {
+    $this->json = new Schema();
+  }
+  
+  
+  public function testEmptyArray() {
+    $this->json->describe(Schema::TYPE_ARRAY);
+    $this->json->validate(array());
+  }
+  
+  
+  public function testEmptyObject() {
+    $this->json->describe(Schema::TYPE_OBJECT);
+    $this->json->validate(array());
+    $this->json->validate(new \stdClass);
+  }
+  
+  
+  public function testStrings() {
+    $this->json->describe(Schema::TYPE_ARRAY, function($json) {
+      $json->all(Schema::TYPE_STRING);
+    });
+    
+    $data = array('string', 'value', '');
+    $this->json->validate($data);
+    
+    try {
+      $data = array('string', 14);
+      $this->json->validate($data);
+      $this->fail("Expected ValidationException to be thrown.");
+    }
+    catch (ValidationException $e) {}
+  }
+  
+  
+  public function testStringsWithCustomValidation() {
+    $this->json->describe(Schema::TYPE_ARRAY, function($json) {
+      $json->all(Schema::TYPE_STRING, function($str) {
+        return (strlen($str) > 3);
+      });
+    });
+    
+    $data = array('asdf', 'jkl;');
+    $this->json->validate($data);
+    
+    try {
+      $data = array('asdf', 'jkl');
+      $this->json->validate($data);
+      $this->fail("Expected ValidationException to be thrown.");
+    }
+    catch (ValidationException $e) {}
+  }
+  
+  
+  public function testNumbers() {
+    $this->json->describe(Schema::TYPE_ARRAY, function($json) {
+      $json->all(Schema::TYPE_NUMBER);
+    });
+    
+    $data = array(15, 15.4);
+    $this->json->validate($data);
+    
+    try {
+      $data = array(15.4, '15');
+      $this->json->validate($data);
+      $this->fail("Expected ValidationException to be thrown.");
+    }
+    catch (ValidationException $e) {}
+  }
+  
+  
+  public function testNumbersWithCustomValidation() {
+    $this->json->describe(Schema::TYPE_ARRAY, function($json) {
+      $json->all(Schema::TYPE_NUMBER, function($num) {
+        return ($num > 10);
+      });
+    });
+    
+    $data = array(10.1, 11);
+    $this->json->validate($data);
+    
+    try {
+      $data = array(10.1, 10);
+      $this->json->validate($data);
+      $this->fail("Expected ValidationException to be thrown.");
+    }
+    catch (ValidationException $e) {}
+  }
+  
+  
+  public function testBooleans() {
+    $this->json->describe(Schema::TYPE_ARRAY, function($json) {
+      $json->all(Schema::TYPE_BOOLEAN);
+    });
+    
+    $data = array(true, false);
+    $this->json->validate($data);
+    
+    try {
+      $data = array(true, 1);
+      $this->json->validate($data);
+      $this->fail("Expected ValidationException to be thrown.");
+    }
+    catch (ValidationException $e) {}
+    
+    try {
+      $data = array(true, 'true');
+      $this->json->validate($data);
+      $this->fail("Expected ValidationException to be thrown.");
+    }
+    catch (ValidationException $e) {}
+  }
+  
+  
+  public function testNull() {
+    $this->json->describe(Schema::TYPE_ARRAY, function($json) {
+      $json->all(Schema::TYPE_NULL);
+    });
+    
+    $data = array(NULL);
+    $this->json->validate($data);
+    
+    try {
+      $data = array(NULL, false);
+      $this->json->validate($data);
+      $this->fail("Expected ValidationException to be thrown.");
+    }
+    catch (ValidationException $e) {}
+    
+    try {
+      $data = array(NULL, 'NULL');
+      $this->json->validate($data);
+      $this->fail("Expected ValidationException to be thrown.");
+    }
+    catch (ValidationException $e) {}
+  }
+  
+  
+  public function testSimpleObject() {
+    $this->json->describe(Schema::TYPE_OBJECT, function($json) {
+      $json->includes('first_name', Schema::TYPE_STRING);
+      $json->includes('last_name', Schema::TYPE_STRING);
+      $json->excludes('name');
+      $json->optional('date_of_birth', Schema::TYPE_STRING, function($date) {
+        return preg_match('/^\d{4}-\d{2}-\d{2}$/', $date);
+      });
+    });
+    
+    $data = array(
+      'first_name' => 'Maik',
+      'last_name' => 'Gosenshuis'
+    );
+    $this->json->validate($data);
+    
+    $data = array(
+      'first_name' => 'Maik',
+      'last_name' => 'Gosenshuis',
+      'date_of_birth' => '1986-09-02'
+    );
+    $this->json->validate($data);
+    
+    try {
+      $data = array(
+        'first_name' => 'Maik',
+        'last_name' => 'Gosenshuis',
+        'name' => 'Maik Gosenshuis'
+      );
+      $this->json->validate($data);
+      $this->fail("Expected ValidationException to be thrown.");
+    }
+    catch (ValidationException $e) {}
+    
+    try {
+      $data = array(
+        'first_name' => 'Maik'
+      );
+      $this->json->validate($data);
+      $this->fail("Expected ValidationException to be thrown.");
+    }
+    catch (ValidationException $e) {}
+  }
+  
+  
+  public function testNestedAggregates() {
+    $this->json->describe(Schema::TYPE_OBJECT, function($json) {
+      $json->includes('name', Schema::TYPE_OBJECT, function($json) {
+        $json->includes('first', Schema::TYPE_STRING);
+        $json->includes('last', Schema::TYPE_STRING);
+      });
+      $json->includes('nicknames', Schema::TYPE_ARRAY, function($json) {
+        $json->all(Schema::TYPE_STRING);
+      });
+    });
+    
+    $data = array(
+      'name' => array(
+        'first' => 'Maik',
+        'last' => 'Gosenshuis'
+      ),
+      'nicknames' => array()
+    );
+    $this->json->validate($data);
+    
+    try {
+      $data = array(
+        'name' => 'Maik Gosenshuis',
+        'nicknames' => array()
+      );
+      $this->json->validate($data);
+      $this->fail("Expected ValidationException to be thrown.");
+    }
+    catch (ValidationException $e) {}
+    
+    try {
+      $data = array(
+        'first' => 'Maik',
+        'last' => 'Gosenshuis',
+        'nicknames' => array()
+      );
+      $this->json->validate($data);
+      $this->fail("Expected ValidationException to be thrown.");
+    }
+    catch (ValidationException $e) {}
+    
+    try {
+      $data = array(
+        'name' => array(
+          'first' => 'Maik',
+          'last' => 'Gosenshuis'
+        ),
+        'nicknames' => ''
+      );
+      $this->json->validate($data);
+      $this->fail("Expected ValidationException to be thrown.");
+    }
+    catch (ValidationException $e) {}
+  }
+}
