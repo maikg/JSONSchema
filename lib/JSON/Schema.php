@@ -31,6 +31,10 @@ class Schema {
   
   
   public function validate($data) {
+    if ($this->root_desc === NULL) {
+      throw new Schema\DescriptionException("No description defined for the root object.");
+    }
+    
     if (is_string($data)) {
       $data = json_decode($data, true);
     }

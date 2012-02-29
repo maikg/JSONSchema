@@ -13,6 +13,14 @@ class SchemaTest extends \PHPUnit_Framework_TestCase {
   }
   
   
+  /**
+   * @expectedException \JSON\Schema\DescriptionException
+   */
+  public function testValidateWithoutDescription() {
+    $this->json->validate(array());
+  }
+  
+  
   public function testEmptyArray() {
     $this->json->describe(Schema::TYPE_ARRAY);
     $this->json->validate(array());
@@ -26,8 +34,22 @@ class SchemaTest extends \PHPUnit_Framework_TestCase {
   }
   
   
-  public function testInvalidRootObjectType() {
-    $this->markTestIncomplete();
+  /**
+   * @dataProvider invalidRootObjectTypeProvider
+   * @expectedException \InvalidArgumentException
+   */
+  public function testInvalidRootObjectType($type) {
+    $this->json->describe($type);
+  }
+  
+  
+  public static function invalidRootObjectTypeProvider() {
+    return array(
+      array(Schema::TYPE_STRING),
+      array(Schema::TYPE_NUMBER),
+      array(Schema::TYPE_BOOLEAN),
+      array(Schema::TYPE_NULL)
+    );
   }
   
   
@@ -268,11 +290,16 @@ class SchemaTest extends \PHPUnit_Framework_TestCase {
   
   public function testMultipleTypes() {
     $this->json->describe(Schema::TYPE_OBJECT, function($json) {
-      $json->includes('name', Schema::TYPE_STRING | Schema::TYPE_NULL);
+      $json->includes('name', Schema::TYPE_STRING | Schema::TYPE_NUMBER | Schema::TYPE_NULL);
     });
     
     $data = array(
       'name' => 'Maik Gosenshuis'
+    );
+    $this->json->validate($data);
+    
+    $data = array(
+      'name' => 15
     );
     $this->json->validate($data);
     
@@ -327,5 +354,41 @@ class SchemaTest extends \PHPUnit_Framework_TestCase {
         return true;
       });
     });
+  }
+  
+  
+  public function testConvertsJSONStrings() {
+    $this->json->describe(Schema::TYPE_OBJECT);
+    
+    $json_string = "{}";
+    $this->json->validate($json_string);
+  }
+  
+  
+  public function testSupportsPHPObjects() {
+    $this->json->describe(Schema::TYPE_OBJECT, function($json) {
+      $json->includes('name', Schema::TYPE_STRING);
+    });
+    
+    $json = new \stdClass;
+    $json->name = 'Maik';
+    
+    $this->json->validate($json);
+    
+    $this->json->describe(Schema::TYPE_ARRAY, function($json) {
+      $json->all(Schema::TYPE_OBJECT, function($json) {
+        $json->includes('name', Schema::TYPE_STRING);
+      });
+    });
+    
+    $user1 = new \stdClass;
+    $user1->name = 'Maik';
+    
+    $user2 = new \stdClass;
+    $user2->name = 'Nadja';
+    
+    $json = array($user1, $user2);
+    
+    $this->json->validate($json);
   }
 }

@@ -38,7 +38,7 @@ class ObjectDesc extends AggregateDesc {
         throw new ValidationException(sprintf("Expected '%s' to be present.", $key_name));
       }
       
-      $desc->validate($data[$key_name]);
+      $this->validateValueForKey($desc, $data, $key_name);
     }
     
     foreach ($this->optional as $key_name => $desc) {
@@ -46,6 +46,16 @@ class ObjectDesc extends AggregateDesc {
         continue;
       }
       
+      $this->validateValueForKey($desc, $data, $key_name);
+    }
+  }
+  
+  
+  private function validateValueForKey(Desc $desc, $data, $key_name) {
+    if (is_object($data)) {
+      $desc->validate($data->$key_name);
+    }
+    else {
       $desc->validate($data[$key_name]);
     }
   }
