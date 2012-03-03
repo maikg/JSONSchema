@@ -6,6 +6,13 @@ class ObjectDesc extends AggregateDesc {
   private $includes = array();
   private $optional = array();
   
+  private $allows_other_keys = false;
+  
+  
+  public function allowsOtherKeys($allow) {
+    $this->allows_other_keys = $allow;
+  }
+  
   
   public function excludes($key_name) {
     $this->excludes[] = $key_name;
@@ -28,10 +35,14 @@ class ObjectDesc extends AggregateDesc {
       return;
     }
     
+    $handled_keys = array();
+    
     foreach ($this->excludes as $key_name) {
       if (array_key_exists($key_name, $data)) {
         $this->addValidationError(new ValidationError($node, sprintf("Expected '%s' to not be present.", $key_name)));
       }
+      
+      $handled_keys[$key_name] = true;
     }
     
     foreach ($this->includes as $key_name => $desc) {
@@ -41,6 +52,8 @@ class ObjectDesc extends AggregateDesc {
       }
       
       $this->validateValueForKey($desc, sprintf("%s.%s", $node, $key_name), $data, $key_name);
+      
+      $handled_keys[$key_name] = true;
     }
     
     foreach ($this->optional as $key_name => $desc) {
@@ -49,6 +62,17 @@ class ObjectDesc extends AggregateDesc {
       }
       
       $this->validateValueForKey($desc, sprintf("%s.%s", $node, $key_name), $data, $key_name);
+      
+      $handled_keys[$key_name] = true;
+    }
+    
+    if (!$this->allows_other_keys) {
+      $unhandled_data = array_diff_key((array)$data, $handled_keys);
+      if (count($unhandled_data) > 0) {
+        foreach ($unhandled_data as $key_name => $value) {
+          $this->addValidationError(new ValidationError($node, sprintf("Expected '%s' to not be present.", $key_name)));
+        }
+      }
     }
   }
   

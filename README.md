@@ -61,9 +61,10 @@ if (!$schema->validate($json)) {
 }
 
 
-// It's also possible to specify multiple types for a single key.
 $schema = new Schema(Schema::TYPE_OBJECT, function($obj) {
-    // This requires the 'name' key to be present, but it can be either NULL or a string.
+    // It's also possible to specify multiple types for a single key.
+    // 
+    // This example requires the 'name' key to be present, but it can be either NULL or a string.
     // When specifying a custom validation when using this syntax, it is called always
     // whenever the actual type matches one of the expected types, except when the actual
     // type is NULL.
@@ -72,6 +73,11 @@ $schema = new Schema(Schema::TYPE_OBJECT, function($obj) {
     $obj->includes('name', Schema::TYPE_STRING | Schema::TYPE_NULL, function($str) {
         // Only called when $root['name'] is a string.
     });
+    
+    // By default, other keys that are not explicitly defined are not allowed and a
+    // ValidationError will be added for each unexpected key. You can override this
+    // behavior.
+    $obj->allowsOtherKeys(true);
 });
 ?>
 ```

@@ -207,13 +207,6 @@ class SchemaTest extends \PHPUnit_Framework_TestCase {
     $this->assertNotValid($schema, $data, 1);
     
     $data = array(
-      'first' => 'Maik',
-      'last' => 'Gosenshuis',
-      'nicknames' => array()
-    );
-    $this->assertNotValid($schema, $data, 1);
-    
-    $data = array(
       'name' => array(
         'first' => 'Maik',
         'last' => 'Gosenshuis'
@@ -323,5 +316,23 @@ class SchemaTest extends \PHPUnit_Framework_TestCase {
     $json = array($user1, $user2);
     
     $this->assertValid($schema, $json);
+  }
+  
+  
+  public function testOtherKeysInObjects() {
+    $schema = new Schema(Schema::TYPE_OBJECT, function($obj) {
+      $obj->includes('name', Schema::TYPE_STRING);
+    });
+    
+    $this->assertNotValid($schema, array('name' => 'maik', 'email' => 'email@example.com'), 1);
+    $this->assertNotValid($schema, array('email' => 'email@example.com'), 2);
+    
+    $schema = new Schema(Schema::TYPE_OBJECT, function($obj) {
+      $obj->includes('name', Schema::TYPE_STRING);
+      $obj->allowsOtherKeys(true);
+    });
+    
+    $this->assertValid($schema, array('name' => 'maik', 'email' => 'email@example.com'));
+    $this->assertNotValid($schema, array('email' => 'email@example.com'), 1);
   }
 }
