@@ -67,11 +67,9 @@ class ObjectDesc extends AggregateDesc {
     }
     
     if (!$this->allows_other_keys) {
-      $unhandled_data = array_diff_key((array)$data, $handled_keys);
-      if (count($unhandled_data) > 0) {
-        foreach ($unhandled_data as $key_name => $value) {
-          $this->addValidationError(new ValidationError($node, sprintf("Expected '%s' to not be present.", $key_name)));
-        }
+      $unexpected_keys = array_keys(array_diff_key((array)$data, $handled_keys));
+      if (count($unexpected_keys) > 0) {
+        $this->addValidationError(new ValidationError($node, sprintf("Got the following unexpected keys: %s", implode(', ', $unexpected_keys))));
       }
     }
   }

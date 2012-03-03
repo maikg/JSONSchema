@@ -75,8 +75,8 @@ $schema = new Schema(Schema::TYPE_OBJECT, function($obj) {
     });
     
     // By default, other keys that are not explicitly defined are not allowed and a
-    // ValidationError will be added for each unexpected key. You can override this
-    // behavior.
+    // ValidationError will be added containing a message specifying which keys were
+    // unexpected. You can override this behavior.
     $obj->allowsOtherKeys(true);
 });
 ?>
