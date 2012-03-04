@@ -1,5 +1,5 @@
 {
-  "name": "maikg/JSONSchema",
+  "name": "maikg/jsonschema",
   "description": "Simple schema validator for JSON formats.",
   "keywords": ["json", "schema", "validate", "validation"],
   "homepage": "http://github.com/maikg/JSONSchema",
